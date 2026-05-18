@@ -30,13 +30,13 @@ app.get("/send/:id", async (req, res) => {
       .ref("FCM/" + androidID)
       .once("value");
 
+    if (!snapshot.exists()) {
+      return res.send("TOKEN NOT FOUND");
+    }
+
     const token = snapshot.val();
 
     console.log("TOKEN:", token);
-
-    if (!token) {
-      return res.send("TOKEN NOT FOUND");
-    }
 
     const message = {
 
@@ -50,17 +50,19 @@ app.get("/send/:id", async (req, res) => {
     const response =
       await admin.messaging().send(message);
 
-    console.log(response);
+    console.log("FCM RESPONSE:", response);
 
-    res.send(response);
+    return res.send("PUSH SENT");
 
   } catch (e) {
 
-    console.log(e);
+    console.log("ERROR:", e);
 
-    res.send(e.toString());
+    return res.send(e.toString());
   }
 
 });
 
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000, () => {
+  console.log("SERVER STARTED");
+});
