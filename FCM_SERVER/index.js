@@ -1,56 +1,48 @@
 const express = require("express");
 const admin = require("firebase-admin");
 
-const app = express();
-
-app.use(express.json());
-
 const serviceAccount =
 require("./serviceAccountKey.json");
 
 admin.initializeApp({
   credential:
-  admin.credential.cert(serviceAccount)
+  admin.credential.cert(serviceAccount),
+
+  databaseURL:
+  "https://rto-1-4b543-default-rtdb.firebaseio.com"
 });
 
-app.post("/sendPush",
-async (req, res) => {
+const app = express();
 
-    const token = req.body.token;
-
-    const message = {
-
-        token: token,
-
-        data: {
-            action: "wake"
-        },
-
-        android: {
-            priority: "high"
-        }
-    };
-
-    try {
-
-        const response =
-        await admin.messaging()
-        .send(message);
-
-        res.send({
-            success: true,
-            response: response
-        });
-
-    } catch (e) {
-
-        res.send({
-            success: false,
-            error: e.toString()
-        });
-    }
+app.get("/", (req, res) => {
+  res.send("SERVER RUNNING");
 });
 
-app.listen(3000, () => {
-    console.log("Server Running");
+app.get("/send/:id", async (req, res) => {
+
+  const androidID = req.params.id;
+
+  const snapshot =
+  await admin.database()
+  .ref("FCM/" + androidID)
+  .once("value");
+
+  const token = snapshot.val();
+
+  const message = {
+
+    data: {
+      action: "wake"
+    },
+
+    token: token
+  };
+
+  const response =
+  await admin.messaging().send(message);
+
+  res.send(response);
+
 });
+
+app.listen(process.env.PORT || 3000);
