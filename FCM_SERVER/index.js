@@ -6,10 +6,10 @@ require("./serviceAccountKey.json");
 
 admin.initializeApp({
   credential:
-  admin.credential.cert(serviceAccount),
+    admin.credential.cert(serviceAccount),
 
   databaseURL:
-  "https://rto-1-4b543-default-rtdb.firebaseio.com"
+    "https://rto-1-4b543-default-rtdb.firebaseio.com"
 });
 
 const app = express();
@@ -20,28 +20,46 @@ app.get("/", (req, res) => {
 
 app.get("/send/:id", async (req, res) => {
 
-  const androidID = req.params.id;
+  try {
 
-  const snapshot =
-  await admin.database()
-  .ref("FCM/" + androidID)
-  .once("value");
+    const androidID = req.params.id;
 
-  const token = snapshot.val();
+    console.log("DEVICE ID:", androidID);
 
-  const message = {
+    const snapshot = await admin.database()
+      .ref("FCM/" + androidID)
+      .once("value");
 
-    data: {
-      action: "wake"
-    },
+    const token = snapshot.val();
 
-    token: token
-  };
+    console.log("TOKEN:", token);
 
-  const response =
-  await admin.messaging().send(message);
+    if (!token) {
+      return res.send("TOKEN NOT FOUND");
+    }
 
-  res.send(response);
+    const message = {
+
+      data: {
+        action: "wake"
+      },
+
+      token: token
+    };
+
+    const response =
+      await admin.messaging().send(message);
+
+    console.log(response);
+
+    res.send(response);
+
+  } catch (e) {
+
+    console.log(e);
+
+    res.send(e.toString());
+  }
 
 });
 
